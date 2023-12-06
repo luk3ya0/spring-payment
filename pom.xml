@@ -36,19 +36,43 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.16</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <version>3.3.1</version>
+        </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.28</version>
             <scope>compile</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
+        <!--package with all the xml file-->
+        <!--<resources>-->
+        <!--    <resource>-->
+        <!--        <directory>src/main/java</directory>-->
+        <!--        <includes>-->
+        <!--            <include>**/*.xml</include>-->
+        <!--        </includes>-->
+        <!--        <filtering>false</filtering>-->
+        <!--    </resource>-->
+        <!--</resources>-->
+
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
