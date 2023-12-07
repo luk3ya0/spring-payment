@@ -9,11 +9,14 @@ import com.luke.payment.mapper.OrderInfoMapper;
 import com.luke.payment.mapper.ProductMapper;
 import com.luke.payment.service.OrderInfoService;
 import com.luke.payment.util.OrderNoUtils;
+import com.sun.org.apache.xpath.internal.operations.Or;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
 
+@Slf4j
 @Service
 public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo> implements OrderInfoService {
 
@@ -69,6 +72,34 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
         queryWrapper.orderByDesc("create_time");
 
         return baseMapper.selectList(queryWrapper);
+    }
+
+    @Override
+    public void updateStatusByOrderNo(String orderNo, OrderStatus orderStatus) {
+        log.info("Update status of the order ===> {}", orderStatus.getType());
+
+        QueryWrapper<OrderInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("order_no", orderNo);
+
+        OrderInfo orderInfo = new OrderInfo();
+        orderInfo.setOrderStatus(orderStatus.getType());
+
+        baseMapper.update(orderInfo, queryWrapper);
+    }
+
+    @Override
+    public String getOrderStatus(String orderNo) {
+        QueryWrapper<OrderInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("order_no", orderNo);
+
+        OrderInfo orderInfo = baseMapper.selectOne(queryWrapper);
+
+        // order has been deleted during awaiting for payment notification
+        if (orderInfo == null) {
+            return null;
+        }
+
+        return orderInfo.getOrderStatus();
     }
 
     private OrderInfo getNoPayOrderByProductId(Long productId) {

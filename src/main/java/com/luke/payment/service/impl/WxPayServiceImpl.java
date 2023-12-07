@@ -3,11 +3,14 @@ package com.luke.payment.service.impl;
 import com.google.gson.Gson;
 import com.luke.payment.config.WxPayConfig;
 import com.luke.payment.entity.OrderInfo;
+import com.luke.payment.enums.OrderStatus;
 import com.luke.payment.enums.wxpay.WxApiType;
 import com.luke.payment.enums.wxpay.WxNotifyType;
 import com.luke.payment.service.OrderInfoService;
+import com.luke.payment.service.PaymentInfoService;
 import com.luke.payment.service.WxPayService;
 import com.mysql.cj.util.StringUtils;
+import com.wechat.pay.contrib.apache.httpclient.util.AesUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -19,8 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @Slf4j
@@ -33,6 +40,11 @@ public class WxPayServiceImpl implements WxPayService {
 
     @Resource
     private OrderInfoService orderInfoService;
+
+    @Resource
+    private PaymentInfoService paymentInfoService;
+
+    private final ReentrantLock lock = new ReentrantLock();
 
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -100,6 +112,63 @@ public class WxPayServiceImpl implements WxPayService {
 
             return strMap;
         }
+    }
+
+    @Override
+    public void processOrder(Map<String, Object> bodyMap) throws GeneralSecurityException {
+        log.info("处理订单");
+        
+        String plainText = decryptFromResource(bodyMap);
+
+        // transform plainText to map
+        Gson gson = new Gson();
+        HashMap plainMap = gson.fromJson(plainText, HashMap.class);
+
+        String orderNo = (String) plainMap.get("out_trade_no");
+
+        // lock avoiding duplicating payment info records
+        if (lock.tryLock()) {
+            try {
+                // 接口调用幂等性
+                // handle duplicate notifications from wechat payment callback
+                String orderStatus = orderInfoService.getOrderStatus(orderNo);
+
+                if (!orderStatus.equals(OrderStatus.NOTPAY.getType())) {
+                    return;
+                }
+
+                // update status of the order by orderNo
+                orderInfoService.updateStatusByOrderNo(orderNo, OrderStatus.SUCCESS);
+
+                // payment logging persistence
+                paymentInfoService.createPaymentInfo(plainText);
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    private String decryptFromResource(Map<String, Object> bodyMap) throws GeneralSecurityException {
+        log.info("密文解密");
+
+        Map<String, String> resourceMap = (Map<String, String>) bodyMap.get("resource");
+
+        String ciphertext = resourceMap.get("ciphertext");
+        String nonce = resourceMap.get("nonce");
+        String associatedData = resourceMap.get("associated_data");
+
+
+        AesUtil aesUtil = new AesUtil(wxPayConfig.getApiV3Key().getBytes());
+        String plainText = aesUtil.decryptToString(
+                associatedData.getBytes(StandardCharsets.UTF_8),
+                nonce.getBytes(StandardCharsets.UTF_8),
+                ciphertext);
+
+        log.info("Cipher Text ===> {}", ciphertext);
+        log.info("Plain Text ===> {}", plainText);
+
+        return plainText;
+
     }
 
     private Map<String, Object> composeParams(OrderInfo orderInfo) {
