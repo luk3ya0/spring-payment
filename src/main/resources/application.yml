@@ -19,3 +19,7 @@ spring:
     configuration:
       log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     mapper-locations: classpath:com/luke/payment/mapper/xml/*.xml
+
+logging:
+  level:
+    root: info

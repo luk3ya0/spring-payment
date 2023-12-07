@@ -1,11 +1,13 @@
 package com.luke.payment.vo;
 
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Data
+@Accessors(chain = true)
 public class R {
 
     // Responsive Code
@@ -17,18 +19,12 @@ public class R {
 
     public static R ok() {
         R r = new R();
-        r.setCode(0);
-        r.setMessage("succeed");
-
-        return r;
+        return r.setCode(0).setMessage("succeed");
     }
 
     public static R error() {
         R r = new R();
-        r.setCode(-1);
-        r.setMessage("failed");
-
-        return r;
+        return r.setCode(-1).setMessage("failed");
     }
 
     public R data(String key, Object value) {
