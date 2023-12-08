@@ -9,11 +9,12 @@ import com.luke.payment.mapper.OrderInfoMapper;
 import com.luke.payment.mapper.ProductMapper;
 import com.luke.payment.service.OrderInfoService;
 import com.luke.payment.util.OrderNoUtils;
-import com.sun.org.apache.xpath.internal.operations.Or;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 @Slf4j
@@ -39,7 +40,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             return existingOrder;
         }
 
-        // 生成订单信息
+        // Generate Order Info
         OrderInfo orderInfo = new OrderInfo();
         orderInfo.setTitle(product.getTitle());
         orderInfo.setOrderNo(OrderNoUtils.getOrderNo());
@@ -94,12 +95,31 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
 
         OrderInfo orderInfo = baseMapper.selectOne(queryWrapper);
 
-        // order has been deleted during awaiting for payment notification
+        // order has been deleted during waiting for payment notification
         if (orderInfo == null) {
             return null;
         }
 
         return orderInfo.getOrderStatus();
+    }
+
+    @Override
+    public List<OrderInfo> getNoPayOrderByDuration(int minutes) {
+        Instant instant = Instant.now().minus(Duration.ofMinutes(minutes));
+
+        QueryWrapper<OrderInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("order_status", OrderStatus.NOTPAY.getType());
+        queryWrapper.eq("create_time", instant);
+
+        return baseMapper.selectList(queryWrapper);
+    }
+
+    @Override
+    public OrderInfo getOrderByOrderNo(String orderNo) {
+        QueryWrapper<OrderInfo> queryWrapper = new QueryWrapper<>() ;
+        queryWrapper.eq("order_no", orderNo);
+
+        return baseMapper.selectOne(queryWrapper);
     }
 
     private OrderInfo getNoPayOrderByProductId(Long productId) {

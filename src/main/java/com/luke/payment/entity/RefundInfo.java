@@ -22,6 +22,7 @@ public class RefundInfo extends BaseEntity {
     private Integer totalFee;
 
     // 退款金额(分)
+    // 微信支持部分退款
     private Integer refund;
 
     // 退款原因
