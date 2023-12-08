@@ -315,6 +315,72 @@ public class WxPayServiceImpl implements WxPayService {
         }
     }
 
+    @Override
+    public String queryBill(String billDate, String type) throws IOException {
+        log.warn("申请账单接口调用 {}", billDate);
+
+        String url = "";
+        if ("tradebill".equals(type)) {
+            url = WxApiType.TRADE_BILLS.getType();
+        } else if ("fundflowbill".equals(type)) {
+            url = WxApiType.FUND_FLOW_BILLS.getType();
+        } else {
+            throw new RuntimeException("不支持的账单类型");
+        }
+
+        url = wxPayConfig.getDomain().concat(url).concat("?bill_data").concat(billDate);
+
+        HttpGet httpGet = new HttpGet(url);
+        httpGet.addHeader("Accept", "application/json");
+
+        try (CloseableHttpResponse response = wxPayClient.execute(httpGet)) {
+            String bodyAsString = EntityUtils.toString(response.getEntity());
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 200) {
+                log.info("成功，申请账单返回结果 = " + bodyAsString);
+            } else if (statusCode == 204) {
+                log.info("成功");
+            } else {
+                throw new RuntimeException(
+                        "申请账单异常，响应码 = " + statusCode +
+                                ", 申请账单返回结果 = " + bodyAsString);
+            }
+
+            Gson gson = new Gson();
+            Map<String, String> resultMap = gson.fromJson(bodyAsString, HashMap.class);
+
+            return resultMap.get("download_url");
+        }
+    }
+
+    @Override
+    public String downloadBill(String billDate, String type) throws IOException {
+        log.warn("下载账单接口调用 {}, {}", billDate, type);
+
+        String downloadUrl = this.queryBill(billDate, type);
+
+        HttpGet httpGet = new HttpGet(downloadUrl);
+        httpGet.addHeader("Accept", "application/json");
+
+        try (CloseableHttpResponse response = wxPayClient.execute(httpGet)) {
+            String bodyAsString = EntityUtils.toString(response.getEntity());
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 200) {
+                log.info("成功，下载账单返回结果 = " + bodyAsString);
+            } else if (statusCode == 204) {
+                log.info("成功");
+            } else {
+                throw new RuntimeException(
+                        "下载账单异常，响应码 = " + statusCode +
+                                ", 申请账单返回结果 = " + bodyAsString);
+            }
+
+            return bodyAsString;
+        }
+    }
+
     private String handleResponse(CloseableHttpResponse response) throws Exception {
         int statusCode = response.getStatusLine().getStatusCode();
         String bodyAsString = EntityUtils.toString(response.getEntity());
