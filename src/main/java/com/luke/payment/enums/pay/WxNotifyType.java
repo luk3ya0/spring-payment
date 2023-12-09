@@ -1,4 +1,4 @@
-package com.luke.payment.enums.wxpay;
+package com.luke.payment.enums.pay;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

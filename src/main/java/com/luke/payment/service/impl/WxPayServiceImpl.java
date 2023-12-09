@@ -6,9 +6,10 @@ import com.luke.payment.config.WxPayConfig;
 import com.luke.payment.entity.OrderInfo;
 import com.luke.payment.entity.RefundInfo;
 import com.luke.payment.enums.OrderStatus;
-import com.luke.payment.enums.wxpay.WxApiType;
-import com.luke.payment.enums.wxpay.WxNotifyType;
-import com.luke.payment.enums.wxpay.WxTradeState;
+import com.luke.payment.enums.PayType;
+import com.luke.payment.enums.pay.WxApiType;
+import com.luke.payment.enums.pay.WxNotifyType;
+import com.luke.payment.enums.pay.WxTradeState;
 import com.luke.payment.service.OrderInfoService;
 import com.luke.payment.service.PaymentInfoService;
 import com.luke.payment.service.RefundInfoService;
@@ -60,7 +61,7 @@ public class WxPayServiceImpl implements WxPayService {
     public Map<String, Object> nativePay(Long productId) throws Exception {
         log.info("生成订单");
 
-        OrderInfo orderInfo = orderInfoService.createOrderByProductId(productId);
+        OrderInfo orderInfo = orderInfoService.createOrderByProductId(productId, PayType.WXPAY.getType());
         String codeUrl = orderInfo.getCodeUrl();
         if (orderInfo != null && !StringUtils.isNullOrEmpty(codeUrl)) {
             log.info("订单二维码已存在");
@@ -389,7 +390,7 @@ public class WxPayServiceImpl implements WxPayService {
         log.info("生成订单");
 
         // 生成订单
-        OrderInfo orderInfo = orderInfoService.createOrderByProductId(productId);
+        OrderInfo orderInfo = orderInfoService.createOrderByProductId(productId, PayType.WXPAY.getType());
         String codeUrl = orderInfo.getCodeUrl();
         if (orderInfo != null && !StringUtils.isNullOrEmpty(codeUrl)) {
             log.info("订单已存在，二维码已保存");

@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,7 +19,7 @@ public class PaymentInfoServiceImpl extends ServiceImpl<PaymentInfoMapper, Payme
 
     @Override
     public void createPaymentInfo(String plainText) {
-        log.info("Logging Payment Info");
+        log.info("Logging Payment Info from WeChat Pay");
 
         Gson gson = new Gson();
         HashMap plainMap = gson.fromJson(plainText, HashMap.class);
@@ -38,6 +39,36 @@ public class PaymentInfoServiceImpl extends ServiceImpl<PaymentInfoMapper, Payme
         paymentInfo.setTradeState(tradeState);
         paymentInfo.setPayerTotal(payerTotal);
         paymentInfo.setContent(plainText);
+
+        baseMapper.insert(paymentInfo);
+    }
+
+    @Override
+    public void createPaymentInfoForAlipay(Map<String, String> params) {
+
+        log.info("Logging Payment Info from Alipay");
+
+        String orderNo = params.get("out_trade_no");
+
+        String transactionId = params.get("trade_no");
+
+        String tradeStatus = params.get("trade_status");
+
+        String totalAmount = params.get("total_amount");
+        int totalAmountInt = new BigDecimal(totalAmount).multiply(new BigDecimal("100")).intValue();
+
+        Gson gson = new Gson();
+        String json = gson.toJson(params, HashMap.class);
+
+        PaymentInfo paymentInfo = new PaymentInfo();
+
+        paymentInfo.setOrderNo(orderNo);
+        paymentInfo.setPaymentType(PayType.ALIPAY.getType());
+        paymentInfo.setTransactionId(transactionId);
+        paymentInfo.setTradeType("电脑网站支付");
+        paymentInfo.setTradeState(tradeStatus);
+        paymentInfo.setPayerTotal(totalAmountInt);
+        paymentInfo.setContent(json);
 
         baseMapper.insert(paymentInfo);
     }

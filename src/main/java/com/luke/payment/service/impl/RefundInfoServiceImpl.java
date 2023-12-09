@@ -60,4 +60,34 @@ public class RefundInfoServiceImpl extends ServiceImpl<RefundInfoMapper, RefundI
 
         baseMapper.update(refundInfo, queryWrapper);
     }
+
+    @Override
+    public RefundInfo createRefundByOrderNoForAliPay(String orderNo, String reason) {
+        OrderInfo orderInfo = orderInfoService.getOrderByOrderNo(orderNo);
+
+        RefundInfo refundInfo = new RefundInfo();
+        refundInfo.setOrderNo(orderNo);
+        refundInfo.setRefundNo(OrderNoUtils.getRefundNo());
+
+        refundInfo.setTotalFee(orderInfo.getTotalFee());
+        refundInfo.setRefund(orderInfo.getTotalFee());
+        refundInfo.setReason(reason);
+
+        baseMapper.insert(refundInfo);
+
+        return refundInfo;
+    }
+
+    @Override
+    public void updateRefundForAliPay(String refundNo, String content, String refundStatus) {
+        QueryWrapper<RefundInfo> queryMapper = new QueryWrapper<>();
+        queryMapper.eq("refund_no", refundNo);
+
+        RefundInfo refundInfo = new RefundInfo();
+        refundInfo.setRefundStatus(refundStatus);
+        refundInfo.setContentReturn(content);
+
+        baseMapper.update(refundInfo, queryMapper);
+
+    }
 }
